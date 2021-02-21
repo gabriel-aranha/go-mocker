@@ -63,11 +63,7 @@ func getApiHandler(c echo.Context) error {
 
 		requestBodyMap := requestBodyInterface.(map[string]interface{})
 
-		if requestBodyMap["body"] == nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "missing request body")
-		}
-
-		r, err := json.Marshal(requestBodyMap["body"])
+		r, err := json.Marshal(requestBodyMap)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusBadRequest, "cannot marshal request body")
 		}
