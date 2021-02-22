@@ -7,10 +7,6 @@ RUN go test -cover -v ./...
 RUN go get -d -v ./...
 RUN go install -v ./...
 
-# Set Redis Host and Password
-#ENV REDIS_HOST=""
-#ENV REDIS_PASS=""
-
 EXPOSE 1323
 
 CMD ["/go/bin/go-mocker"]

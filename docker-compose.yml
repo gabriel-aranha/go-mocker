@@ -1,0 +1,23 @@
+version: '3.0'
+services:
+  go-mocker:
+    container_name: go-mocker
+    build: .
+    environment:
+      - REDIS_HOST=0.0.0.0:6379
+    network_mode: host
+    ports:
+      - 1323:1323
+    depends_on:
+      - redis
+  redis:
+    container_name: redis
+    image: redis:6.0
+    network_mode: host
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    command:
+      - redis-server
+    ports:
+      - 6379:6379
+   
