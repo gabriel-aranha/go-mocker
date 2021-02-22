@@ -1,9 +1,20 @@
 # go-mocker
 
-## Docker project to run a Go Mocker Server
+## Quickstart with Docker Compose(go-mocker + Redis)
+Clone this repository:
+```
+$ git clone git@github.com:gabriel-aranha/go-mocker.git
+```
+Enter the folder:
+```
+$ cd go-mocker
+```
+Send the docker compose command:
+```
+$ docker-compose up --build
+```
 
-## Quickstart
-
+## Quickstart without Docker Compose(Standalone go-mocker)
 ### Requirements
 A Redis Server instance is needed
 
@@ -18,7 +29,9 @@ $ cd go-mocker
 ```
 Edit the Dockerfile to set the Redis host and password (If unchanged, will default to  host localhost:6379 and no password):
 ```
-$ nano Dockerfile
+# Example Redis Host and Password
+ENV REDIS_HOST="192.168.0.1:6379"
+ENV REDIS_PASS="pass123"
 ```
 
 ### Running
@@ -46,7 +59,7 @@ It should return the following:
 }
 ```
 
-### Usage
+## Usage
 To begin using go-mocker, you need to first send a POST request to an "/api" endpoint of your choice.  
 As an example, let's create the following mock endpoint:
 ```
