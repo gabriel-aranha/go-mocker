@@ -1,3 +1,4 @@
+[![Go](https://github.com/gabriel-aranha/go-mocker/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/gabriel-aranha/go-mocker/actions/workflows/go.yml)
 # go-mocker
 
 ## Quickstart with Docker Compose(go-mocker + Redis)
