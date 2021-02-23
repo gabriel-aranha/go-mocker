@@ -28,10 +28,10 @@ Enter the folder:
 ```
 $ cd go-mocker
 ```
-Edit the Dockerfile to set the Redis host and password (If unchanged, will default to  host localhost:6379 and no password):
+Edit the Dockerfile to set the Redis url and password (If unchanged, will default to url localhost:6379 and no password):
 ```
-# Example Redis Host and Password
-ENV REDIS_HOST="192.168.0.1:6379"
+# Example Redis Url and Password
+ENV REDIS_URL="192.168.0.1:6379"
 ENV REDIS_PASS="pass123"
 ```
 

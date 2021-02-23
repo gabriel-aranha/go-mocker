@@ -66,6 +66,14 @@ func TestGetHandler(t *testing.T) {
 			statusCode:  http.StatusBadRequest,
 		},
 		{
+			name:        "BadRoute",
+			route:       "/bad-api/test-route",
+			body:        ``,
+			message:     `{"message":"Not Found"}`,
+			dbConnected: true,
+			statusCode:  http.StatusNotFound,
+		},
+		{
 			name:        "MissingConnection",
 			route:       "/api/test-route",
 			body:        ``,
@@ -88,8 +96,8 @@ func TestGetHandler(t *testing.T) {
 				}
 				defer miniredis.Close()
 
-				os.Setenv("REDIS_HOST", miniredis.Addr())
-				defer os.Unsetenv("REDIS_HOST")
+				os.Setenv("REDIS_URL", miniredis.Addr())
+				defer os.Unsetenv("REDIS_URL")
 			}
 
 			redisClient().Set(ctx, test.redisKey, test.redisValue, 7*24*time.Hour)
@@ -188,8 +196,8 @@ func TestPostHandler(t *testing.T) {
 				}
 				defer miniredis.Close()
 
-				os.Setenv("REDIS_HOST", miniredis.Addr())
-				defer os.Unsetenv("REDIS_HOST")
+				os.Setenv("REDIS_URL", miniredis.Addr())
+				defer os.Unsetenv("REDIS_URL")
 			}
 
 			req := httptest.NewRequest(echo.POST, test.route, strings.NewReader(test.body))
@@ -215,9 +223,9 @@ func TestRedisClient(t *testing.T) {
 	})
 
 	t.Run("SetEnv", func(t *testing.T) {
-		os.Setenv("REDIS_HOST", "192.168.0.1")
+		os.Setenv("REDIS_URL", "192.168.0.1")
 
-		defer os.Unsetenv("REDIS_HOST")
+		defer os.Unsetenv("REDIS_URL")
 
 		got := redisClient().Options().Addr
 		want := "192.168.0.1"
