@@ -13,6 +13,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSetupPort(t *testing.T) {
+	t.Run("UnsetEnv", func(t *testing.T) {
+		setupPort()
+
+		defer os.Unsetenv("PORT")
+
+		got := os.Getenv("PORT")
+		want := "1323"
+
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+
+	t.Run("SetEnv", func(t *testing.T) {
+		os.Setenv("PORT", "5000")
+
+		setupPort()
+
+		defer os.Unsetenv("PORT")
+
+		got := os.Getenv("PORT")
+		want := "5000"
+
+		if got != want {
+			t.Errorf("got %q, want %q", got, want)
+		}
+	})
+}
+
 func TestHealthHandler(t *testing.T) {
 	e := initEcho()
 

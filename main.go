@@ -25,9 +25,11 @@ type HashId struct {
 }
 
 func main() {
+	setupPort()
+	
 	e := initEcho()
 
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":" + os.Getenv("PORT")))
 }
 
 func initEcho() *echo.Echo {
@@ -40,6 +42,13 @@ func initEcho() *echo.Echo {
 	e.POST("/api/*", postApiHandler)
 
 	return e
+}
+
+func setupPort() {
+	_, ok := os.LookupEnv("PORT")
+	if !ok {
+		os.Setenv("PORT", "1323")
+	}
 }
 
 func healthHandler(c echo.Context) error {
