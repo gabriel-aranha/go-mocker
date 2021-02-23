@@ -4,7 +4,7 @@ services:
     container_name: go-mocker
     build: .
     environment:
-      - REDIS_HOST=0.0.0.0:6379
+      - REDIS_URL=0.0.0.0:6379
     network_mode: host
     ports:
       - 1323:1323

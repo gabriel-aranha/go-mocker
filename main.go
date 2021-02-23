@@ -151,16 +151,16 @@ func createHashString(uniqueString string) string {
 }
 
 func redisClient() *redis.Client {
-	_, ok := os.LookupEnv("REDIS_HOST")
+	_, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
-		os.Setenv("REDIS_HOST", "localhost")
+		os.Setenv("REDIS_URL", "localhost")
 	}
 
 	_, ok = os.LookupEnv("REDIS_PASS")
 	if !ok {
 		os.Setenv("REDIS_PASS", "")
 	}
-	address := os.Getenv("REDIS_HOST")
+	address := os.Getenv("REDIS_URL")
 	password := os.Getenv("REDIS_PASS")
 	client := redis.NewClient(&redis.Options{
 		Addr:     address,
