@@ -46,7 +46,7 @@ func TestSetupPort(t *testing.T) {
 func TestHealthHandler(t *testing.T) {
 	e := initEcho()
 
-	req := httptest.NewRequest(echo.GET, "/health", nil)
+	req := httptest.NewRequest(echo.GET, "/", nil)
 	rec := httptest.NewRecorder()
 
 	e.ServeHTTP(rec, req)
@@ -74,6 +74,16 @@ func TestGetHandler(t *testing.T) {
 			redisValue:  `{"test": 20}`,
 			dbConnected: true,
 			statusCode:  http.StatusOK,
+		},
+		{
+			name:        "NoJSONBody",
+			route:       "/api/test-route",
+			body:        `@`,
+			message:     `{"message":"cannot unmarshal request body"}`,
+			redisKey:    "1f1eee663738854c4e53bf7be7902de982f22255",
+			redisValue:  `{"test": 20}`,
+			dbConnected: true,
+			statusCode:  http.StatusBadRequest,
 		},
 		{
 			name:        "WithRequestBody",
@@ -166,6 +176,14 @@ func TestPostHandler(t *testing.T) {
 			statusCode:  http.StatusBadRequest,
 		},
 		{
+			name:        "NoJSONBody",
+			route:       "/api/test-route",
+			body:        `@`,
+			message:     `{"message":"cannot unmarshal request body"}`,
+			dbConnected: true,
+			statusCode:  http.StatusBadRequest,
+		},
+		{
 			name:        "NoBodyKey",
 			route:       "/api/test-route",
 			body:        `{"response": {"test": 20}}`,
@@ -245,7 +263,7 @@ func TestPostHandler(t *testing.T) {
 func TestRedisClient(t *testing.T) {
 	t.Run("UnsetEnv", func(t *testing.T) {
 		got := redisClient().Options().Addr
-		want := "localhost"
+		want := "localhost:6379"
 
 		if got != want {
 			t.Errorf("got %q, want %q", got, want)
@@ -253,12 +271,12 @@ func TestRedisClient(t *testing.T) {
 	})
 
 	t.Run("SetEnv", func(t *testing.T) {
-		os.Setenv("REDIS_URL", "192.168.0.1")
+		os.Setenv("REDIS_URL", "192.168.0.1:6379")
 
 		defer os.Unsetenv("REDIS_URL")
 
 		got := redisClient().Options().Addr
-		want := "192.168.0.1"
+		want := "192.168.0.1:6379"
 
 		if got != want {
 			t.Errorf("got %q, want %q", got, want)

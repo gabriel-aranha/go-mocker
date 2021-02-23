@@ -35,7 +35,7 @@ func main() {
 func initEcho() *echo.Echo {
 	e := echo.New()
 
-	e.GET("/health", healthHandler)
+	e.GET("/", healthHandler)
 
 	e.GET("/api/*", getApiHandler)
 
@@ -162,7 +162,7 @@ func createHashString(uniqueString string) string {
 func redisClient() *redis.Client {
 	_, ok := os.LookupEnv("REDIS_URL")
 	if !ok {
-		os.Setenv("REDIS_URL", "localhost")
+		os.Setenv("REDIS_URL", "localhost:6379")
 	}
 
 	_, ok = os.LookupEnv("REDIS_PASS")
