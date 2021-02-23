@@ -79,7 +79,7 @@
 3. To begin using go-mocker, you need to first send a POST request to an "/api" endpoint of your choice.  
 As an example, let's create the following mock endpoint:
     ```
-    http://<address>:1323/api/get-countries
+    http://<address>:<port>/api/get-countries
     ```
 4. To accomplish this, you send a POST request to the above endpoint and include in the request body your JSON response data formatted like this:
     ```
