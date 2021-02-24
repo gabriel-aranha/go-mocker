@@ -1,6 +1,7 @@
 [![Go](https://github.com/gabriel-aranha/go-mocker/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/gabriel-aranha/go-mocker/actions/workflows/go.yml)
-# go-mocker
+[![CodeQL](https://github.com/gabriel-aranha/go-mocker/actions/workflows/codeql-analysis.yml/badge.svg?branch=main)](https://github.com/gabriel-aranha/go-mocker/actions/workflows/codeql-analysis.yml)
 
+# go-mocker
 ## Quickstart with Heroku
 ### Requirements
 1. Create an app on Heroku
