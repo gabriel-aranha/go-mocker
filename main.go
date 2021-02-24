@@ -5,7 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -57,7 +57,7 @@ func healthHandler(c echo.Context) error {
 }
 
 func getApiHandler(c echo.Context) error {
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot read request body")
 	}
@@ -96,7 +96,7 @@ func getApiHandler(c echo.Context) error {
 }
 
 func postApiHandler(c echo.Context) error {
-	body, err := ioutil.ReadAll(c.Request().Body)
+	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "cannot read request body")
 	}
