@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 var ctx = context.Background()
@@ -26,7 +27,7 @@ type HashId struct {
 
 func main() {
 	setupPort()
-	
+
 	e := initEcho()
 
 	e.Logger.Fatal(e.Start(":" + os.Getenv("PORT")))
@@ -35,10 +36,12 @@ func main() {
 func initEcho() *echo.Echo {
 	e := echo.New()
 
+	e.Use(middleware.Recover())
+	e.Use(middleware.Secure())
+	e.Use(middleware.CORS())
+
 	e.GET("/", healthHandler)
-
 	e.GET("/api/*", getApiHandler)
-
 	e.POST("/api/*", postApiHandler)
 
 	return e
@@ -53,6 +56,7 @@ func setupPort() {
 
 func healthHandler(c echo.Context) error {
 	healthStatus := HealthStatus{"ok"}
+
 	return c.JSON(http.StatusOK, healthStatus)
 }
 
@@ -92,6 +96,7 @@ func getApiHandler(c echo.Context) error {
 	}
 
 	encodedResponse := []byte(response)
+
 	return c.JSONBlob(http.StatusOK, encodedResponse)
 }
 
@@ -153,7 +158,6 @@ func concatenateUniqueString(urlString string, bodyString string) string {
 
 func createHashString(uniqueString string) string {
 	sha1Hash := sha1.Sum([]byte(uniqueString))
-
 	hashIdString := hex.EncodeToString(sha1Hash[:])
 
 	return hashIdString
