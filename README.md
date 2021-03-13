@@ -5,7 +5,7 @@
 ### Requirements
 1. Create an app on Heroku
 2. Download or fork the go-mocker project and add it to the app
-2. Add a Redis instance to the app such as Heroku Redis
+3. Add a Redis instance to the app such as Heroku Redis
 
 ### Setup
 1. Go to the settings pane of your app and set the following config vars:    
@@ -17,6 +17,10 @@
     ```
     REDIS_PASS -> yourpassword
     REDIS_URL  -> address:port
+    ```
+    1.3 (Optional) Set the API auth key:  
+    ```
+    AUTH_KEY -> yourauthkey
     ```
 
 ## Quickstart with Docker Compose(go-mocker + Redis)

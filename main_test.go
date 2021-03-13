@@ -43,15 +43,88 @@ func TestSetupPort(t *testing.T) {
 	})
 }
 
+func TestAuthKey(t *testing.T) {
+	t.Run("UnsetEnv", func(t *testing.T) {
+		got := authKey()
+		want := false
+
+		if got != want {
+			t.Errorf("got %t, want %t", got, want)
+		}
+	})
+
+	t.Run("SetEnv", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		got := authKey()
+		want := true
+
+		if got != want {
+			t.Errorf("got %t, want %t", got, want)
+		}
+	})
+}
+
 func TestHealthHandler(t *testing.T) {
-	e := initEcho()
+	t.Run("WithAuthKey", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
 
-	req := httptest.NewRequest(echo.GET, "/", nil)
-	rec := httptest.NewRecorder()
+		defer os.Unsetenv("AUTH_KEY")
 
-	e.ServeHTTP(rec, req)
+		e := initEcho()
 
-	assert.Equal(t, http.StatusOK, rec.Code)
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Authorization", "Bearer test-auth-key")
+		rec := httptest.NewRecorder()
+
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
+
+	t.Run("WrongAuthKey", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		e := initEcho()
+
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		req.Header.Set("Authorization", "Bearer bad-auth-key")
+		rec := httptest.NewRecorder()
+
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	})
+
+	t.Run("MissingAuthKey", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		e := initEcho()
+
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		rec := httptest.NewRecorder()
+
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+	})
+
+	t.Run("WithoutAuthKey", func(t *testing.T) {
+		e := initEcho()
+
+		req := httptest.NewRequest(echo.GET, "/", nil)
+		rec := httptest.NewRecorder()
+
+		e.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusOK, rec.Code)
+	})
 }
 
 func TestGetHandler(t *testing.T) {
