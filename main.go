@@ -40,6 +40,12 @@ func initEcho() *echo.Echo {
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORS())
 
+	if authKey() {
+		e.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
+			return key == os.Getenv("AUTH_KEY"), nil
+		}))
+	}
+
 	e.GET("/", healthHandler)
 	e.GET("/api/*", getApiHandler)
 	e.POST("/api/*", postApiHandler)
@@ -51,6 +57,15 @@ func setupPort() {
 	_, ok := os.LookupEnv("PORT")
 	if !ok {
 		os.Setenv("PORT", "1323")
+	}
+}
+
+func authKey() bool {
+	_, ok := os.LookupEnv("AUTH_KEY")
+	if !ok {
+		return false
+	} else {
+		return true
 	}
 }
 
