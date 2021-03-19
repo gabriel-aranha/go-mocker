@@ -1,7 +1,7 @@
 version: '3.0'
 services:
-  go-mocker:
-    container_name: go-mocker
+  minimock:
+    container_name: minimock
     build: .
     environment:
       - REDIS_URL=0.0.0.0:6379
@@ -12,7 +12,7 @@ services:
       - redis
   redis:
     container_name: redis
-    image: redis:6.0
+    image: redis:latest
     network_mode: host
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
