@@ -77,16 +77,12 @@ func healthHandler(c echo.Context) error {
 func getApiHandler(c echo.Context) error {
 	hashIdString := createHashString(c.Request().URL.String())
 
-	response, err := redisClient().Get(context.Background(), hashIdString).Result()
-	if err == redis.Nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
-	} else if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
+	response, echoError := getRedisKey(hashIdString)
+	if echoError.Code != http.StatusOK {
+		return echoError
 	}
 
-	encodedResponse := []byte(response)
-
-	return c.JSONBlob(http.StatusOK, encodedResponse)
+	return c.JSONBlob(http.StatusOK, []byte(response))
 }
 
 func postApiHandler(c echo.Context) error {
@@ -117,16 +113,12 @@ func postApiHandler(c echo.Context) error {
 
 	hashIdString := createHashString(uniqueString)
 
-	response, err := redisClient().Get(context.Background(), hashIdString).Result()
-	if err == redis.Nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
-	} else if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
+	response, echoError := getRedisKey(hashIdString)
+	if echoError.Code != http.StatusOK {
+		return echoError
 	}
 
-	encodedResponse := []byte(response)
-
-	return c.JSONBlob(http.StatusOK, encodedResponse)
+	return c.JSONBlob(http.StatusOK, []byte(response))
 }
 
 func putApiHandler(c echo.Context) error {
@@ -176,12 +168,31 @@ func putApiHandler(c echo.Context) error {
 
 	hashIdString := createHashString(uniqueString)
 
-	err = redisClient().Set(context.Background(), hashIdString, requestResponseString, 7*24*time.Hour).Err()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
+	echoError := setRedisKey(hashIdString, requestResponseString)
+
+	return echoError
+}
+
+func getRedisKey(keyId string) (string, *echo.HTTPError) {
+	echoError := echo.NewHTTPError(http.StatusOK)
+	response, err := redisClient().Get(context.Background(), keyId).Result()
+	if err == redis.Nil {
+		echoError = echo.NewHTTPError(http.StatusBadRequest)
+	} else if err != nil {
+		echoError = echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return echo.NewHTTPError(http.StatusOK)
+	return response, echoError
+}
+
+func setRedisKey(keyId string, value []byte) *echo.HTTPError {
+	echoError := echo.NewHTTPError(http.StatusOK)
+	err := redisClient().Set(context.Background(), keyId, value, 7*24*time.Hour).Err()
+	if err != nil {
+		echoError = echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	return echoError
 }
 
 func concatenateUniqueString(urlString string, bodyString string) string {

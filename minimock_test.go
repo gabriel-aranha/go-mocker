@@ -417,6 +417,105 @@ func TestPutHandler(t *testing.T) {
 	}
 }
 
+func TestGetRedisKey(t *testing.T) {
+	var tests = []struct {
+		name           string
+		presetRedisKey string
+		redisKey       string
+		redisValue     string
+		dbConnected    bool
+		statusCode     int
+	}{
+		{
+			name:           "KeySetOnRedis",
+			presetRedisKey: "9074f62003bcbed6e87000ad55c501754308685b",
+			redisKey:       "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:     `{"test": 20}`,
+			dbConnected:    true,
+			statusCode:     http.StatusOK,
+		},
+		{
+			name:           "MissingKeyOnRedis",
+			presetRedisKey: "not-the-actual-key",
+			redisKey:       "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:     `{"test": 20}`,
+			dbConnected:    true,
+			statusCode:     http.StatusBadRequest,
+		},
+		{
+			name:           "RedisNotConnected",
+			presetRedisKey: "9074f62003bcbed6e87000ad55c501754308685b",
+			redisKey:       "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:     `{"test": 20}`,
+			dbConnected:    false,
+			statusCode:     http.StatusInternalServerError,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.dbConnected {
+				miniredis, err := miniredis.Run()
+				if err != nil {
+					panic(err)
+				}
+				defer miniredis.Close()
+
+				os.Setenv("REDIS_URL", miniredis.Addr())
+				defer os.Unsetenv("REDIS_URL")
+			}
+
+			redisClient().Set(context.Background(), test.presetRedisKey, test.redisValue, 7*24*time.Hour)
+
+			_, echoError := getRedisKey(test.redisKey)
+
+			assert.Equal(t, test.statusCode, echoError.Code)
+		})
+	}
+}
+
+func TestSetRedisKey(t *testing.T) {
+	var tests = []struct {
+		name        string
+		redisKey    string
+		redisValue  string
+		dbConnected bool
+		statusCode  int
+	}{
+		{
+			name:        "KeySetSuccess",
+			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:  `{"test": 20}`,
+			dbConnected: true,
+			statusCode:  http.StatusOK,
+		},
+		{
+			name:        "RedisNotConnected",
+			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:  `{"test": 20}`,
+			dbConnected: false,
+			statusCode:  http.StatusInternalServerError,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.dbConnected {
+				miniredis, err := miniredis.Run()
+				if err != nil {
+					panic(err)
+				}
+				defer miniredis.Close()
+
+				os.Setenv("REDIS_URL", miniredis.Addr())
+				defer os.Unsetenv("REDIS_URL")
+			}
+
+			echoError := setRedisKey(test.redisKey, []byte(test.redisValue))
+
+			assert.Equal(t, test.statusCode, echoError.Code)
+		})
+	}
+}
+
 func TestRedisClient(t *testing.T) {
 	t.Run("UnsetEnv", func(t *testing.T) {
 		got := redisClient().Options().Addr
