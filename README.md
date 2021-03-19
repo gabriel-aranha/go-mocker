@@ -1,7 +1,7 @@
 [![Build](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml/badge.svg)](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml)
 
 # Minimock
-Minimock is a simple Mock HTTP Server that is deployable completely for free on Heroku. Its use case is if you want some free customizable API for GET and POST requests in early stage projects. Basically, you send a PUT request to an endpoint with the data to be received, and the GET or POST endpoint for the same endpoint will return the data. It also supports Bearer Token authentication on the PUT method, so you can be sure no one will modify your data.
+Minimock is a simple Mock API Server that is deployable completely for free on Heroku. Its use case is if you want some free customizable API for GET and POST requests in early stage projects. Basically, you send a PUT request to an endpoint with the data to be received, and the GET or POST endpoint for the same endpoint will return the data. It also supports Bearer Token authentication on the PUT method, so you can be sure no one will modify your data.
 ## Quickstart with Heroku
 ### Requirements
 1. Create an app on Heroku
