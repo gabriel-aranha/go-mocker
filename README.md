@@ -1,4 +1,4 @@
-[![Build](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml)
+[![Build](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml/badge.svg)](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml)
 
 # Minimock
 Minimock is a simple Mock HTTP Server that is deployable completely for free on Heroku. Its use case is if you want some free customizable API for GET requests in early stage projects. Basically, you send a POST request to an endpoint with the data to be received, and the GET endpoint for the same endpoint will return the data. It also supports Bearer Token authentication on the POST method, so you can be sure no one will modify your data.
