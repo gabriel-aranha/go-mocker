@@ -19,7 +19,7 @@ Minimock is a simple Mock HTTP Server that is deployable completely for free on 
     REDIS_PASS -> yourpassword
     REDIS_URL  -> address:port
     ```
-    1.3 (Optional) Set the POST API auth key. If set, the PUT method needs the auth key as a bearer token:  
+    1.3 (Optional) Set the PUT API auth key. If set, the PUT method needs the auth key as a bearer token:  
     ```
     AUTH_KEY -> yourauthkey
     ```
