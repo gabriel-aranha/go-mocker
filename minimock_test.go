@@ -134,6 +134,75 @@ func TestGetHandler(t *testing.T) {
 		statusCode  int
 	}{
 		{
+			name:        "CorrectRequest",
+			route:       "/api/test-route",
+			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:  `{"test": 20}`,
+			dbConnected: true,
+			statusCode:  http.StatusOK,
+		},
+		{
+			name:        "DataUnsetInRedis",
+			route:       "/api/test-route",
+			redisKey:    "b99c071333d4dbca0d9298e5c8d7480f176cafdc",
+			redisValue:  `{"test": 20}`,
+			dbConnected: true,
+			statusCode:  http.StatusBadRequest,
+		},
+		{
+			name:        "BadRoute",
+			route:       "/bad-api/test-route",
+			dbConnected: true,
+			statusCode:  http.StatusNotFound,
+		},
+		{
+			name:        "MissingConnection",
+			route:       "/api/test-route",
+			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
+			redisValue:  `{"test": 20}`,
+			dbConnected: false,
+			statusCode:  http.StatusInternalServerError,
+		},
+	}
+
+	e := initEcho()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.dbConnected {
+				miniredis, err := miniredis.Run()
+				if err != nil {
+					panic(err)
+				}
+				defer miniredis.Close()
+
+				os.Setenv("REDIS_URL", miniredis.Addr())
+				defer os.Unsetenv("REDIS_URL")
+			}
+
+			redisClient().Set(context.Background(), test.redisKey, test.redisValue, 7*24*time.Hour)
+			req := httptest.NewRequest(echo.GET, test.route, nil)
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			e.ServeHTTP(rec, req)
+
+			assert.Equal(t, test.statusCode, rec.Code)
+		})
+	}
+}
+
+func TestPostHandler(t *testing.T) {
+	var tests = []struct {
+		name        string
+		route       string
+		body        string
+		redisKey    string
+		redisValue  string
+		dbConnected bool
+		statusCode  int
+	}{
+		{
 			name:        "EmptyRequestBody",
 			route:       "/api/test-route",
 			body:        ``,
@@ -203,7 +272,7 @@ func TestGetHandler(t *testing.T) {
 			}
 
 			redisClient().Set(context.Background(), test.redisKey, test.redisValue, 7*24*time.Hour)
-			req := httptest.NewRequest(echo.GET, test.route, strings.NewReader(test.body))
+			req := httptest.NewRequest(echo.POST, test.route, strings.NewReader(test.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
@@ -214,7 +283,7 @@ func TestGetHandler(t *testing.T) {
 	}
 }
 
-func TestPostHandler(t *testing.T) {
+func TestPutHandler(t *testing.T) {
 	var tests = []struct {
 		name        string
 		route       string
@@ -331,7 +400,7 @@ func TestPostHandler(t *testing.T) {
 				defer os.Unsetenv("REDIS_URL")
 			}
 
-			req := httptest.NewRequest(echo.POST, test.route, strings.NewReader(test.body))
+			req := httptest.NewRequest(echo.PUT, test.route, strings.NewReader(test.body))
 			if test.hasAuth {
 				os.Setenv("AUTH_KEY", test.authKey)
 				defer os.Unsetenv("AUTH_KEY")

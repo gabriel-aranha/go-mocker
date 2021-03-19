@@ -1,7 +1,7 @@
 [![Build](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml/badge.svg)](https://github.com/gabriel-aranha/minimock/actions/workflows/build.yml)
 
 # Minimock
-Minimock is a simple Mock HTTP Server that is deployable completely for free on Heroku. Its use case is if you want some free customizable API for GET requests in early stage projects. Basically, you send a POST request to an endpoint with the data to be received, and the GET endpoint for the same endpoint will return the data. It also supports Bearer Token authentication on the POST method, so you can be sure no one will modify your data.
+Minimock is a simple Mock HTTP Server that is deployable completely for free on Heroku. Its use case is if you want some free customizable API for GET and POST requests in early stage projects. Basically, you send a PUT request to an endpoint with the data to be received, and the GET or POST endpoint for the same endpoint will return the data. It also supports Bearer Token authentication on the PUT method, so you can be sure no one will modify your data.
 ## Quickstart with Heroku
 ### Requirements
 1. Create an app on Heroku
@@ -19,7 +19,7 @@ Minimock is a simple Mock HTTP Server that is deployable completely for free on 
     REDIS_PASS -> yourpassword
     REDIS_URL  -> address:port
     ```
-    1.3 (Optional) Set the POST API auth key. If set, the POST method needs the auth key as a bearer token:  
+    1.3 (Optional) Set the POST API auth key. If set, the PUT method needs the auth key as a bearer token:  
     ```
     AUTH_KEY -> yourauthkey
     ```
@@ -81,12 +81,12 @@ Minimock is a simple Mock HTTP Server that is deployable completely for free on 
     }
     ```
 
-3. To begin using Minimock, you need to first send a POST request to an "/api" endpoint of your choice.  
-As an example, let's create the following mock endpoint:
+3. To begin using Minimock, you need to first send a PUT request to an "/api" endpoint of your choice.  
+As an example, let's create the following mock GET endpoint:
     ```
     http://<address>:<port>/api/get-countries
     ```
-4. To accomplish this, you send a POST request to the above endpoint and include in the request body your JSON response data formatted like this:
+4. To accomplish this, you send a PUT request to the above endpoint and include in the request body your JSON response data formatted like this:
     ```
     {
         "response": {
@@ -115,7 +115,7 @@ As an example, let's create the following mock endpoint:
     }
     ```
 
-7. This above example was for GET requests without JSON body. However, you can also send a body to the POST request and receive an unique GET response.
+7. This above example was for GET requests without JSON body. However, you can also send a body to the PUT request and receive an unique POST response.
     ```
     {
         "body": {
@@ -129,7 +129,7 @@ As an example, let's create the following mock endpoint:
     }
     ```
 
-8. If the above POST request was successful, you can then GET the data by adding the following JSON body in the request:
+8. If the above PUT request was successful, you can then POST the data by adding the following JSON body in the request:
     ```
     {
         "continent": "South America"

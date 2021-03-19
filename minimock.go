@@ -34,6 +34,7 @@ func initEcho() *echo.Echo {
 	e.GET("/", healthHandler)
 	e.GET("/api/*", getApiHandler)
 	e.POST("/api/*", postApiHandler)
+	e.PUT("/api/*", putApiHandler)
 
 	return e
 }
@@ -74,6 +75,21 @@ func healthHandler(c echo.Context) error {
 }
 
 func getApiHandler(c echo.Context) error {
+	hashIdString := createHashString(c.Request().URL.String())
+
+	response, err := redisClient().Get(context.Background(), hashIdString).Result()
+	if err == redis.Nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	} else if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	encodedResponse := []byte(response)
+
+	return c.JSONBlob(http.StatusOK, encodedResponse)
+}
+
+func postApiHandler(c echo.Context) error {
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -113,7 +129,7 @@ func getApiHandler(c echo.Context) error {
 	return c.JSONBlob(http.StatusOK, encodedResponse)
 }
 
-func postApiHandler(c echo.Context) error {
+func putApiHandler(c echo.Context) error {
 	if authKey() {
 		authorization := c.Request().Header.Get("Authorization")
 		if unauthorized(authorization) {
