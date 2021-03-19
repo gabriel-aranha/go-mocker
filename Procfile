@@ -1,1 +1,1 @@
-web: bin/go-mocker
+web: bin/minimock

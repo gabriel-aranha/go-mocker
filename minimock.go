@@ -8,22 +8,13 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
-
-var ctx = context.Background()
-
-type HealthStatus struct {
-	Status string `json:"status"`
-}
-
-type HashId struct {
-	Id string `json:"id"`
-}
 
 func main() {
 	setupPort()
@@ -39,12 +30,6 @@ func initEcho() *echo.Echo {
 	e.Use(middleware.Recover())
 	e.Use(middleware.Secure())
 	e.Use(middleware.CORS())
-
-	if authKey() {
-		e.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-			return key == os.Getenv("AUTH_KEY"), nil
-		}))
-	}
 
 	e.GET("/", healthHandler)
 	e.GET("/api/*", getApiHandler)
@@ -69,16 +54,29 @@ func authKey() bool {
 	}
 }
 
-func healthHandler(c echo.Context) error {
-	healthStatus := HealthStatus{"ok"}
+func unauthorized(authorization string) bool {
+	splitToken := strings.Split(authorization, "Bearer")
+	if len(splitToken) != 2 {
+		return true
+	}
 
-	return c.JSON(http.StatusOK, healthStatus)
+	authKey := strings.TrimSpace(splitToken[1])
+
+	if authKey != os.Getenv("AUTH_KEY") {
+		return true
+	}
+
+	return false
+}
+
+func healthHandler(c echo.Context) error {
+	return echo.NewHTTPError(http.StatusOK)
 }
 
 func getApiHandler(c echo.Context) error {
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "cannot read request body")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	requestBodyString := ""
@@ -86,14 +84,14 @@ func getApiHandler(c echo.Context) error {
 		var requestBodyInterface interface{}
 		err = json.Unmarshal([]byte(body), &requestBodyInterface)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "cannot unmarshal request body")
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 
 		requestBodyMap := requestBodyInterface.(map[string]interface{})
 
 		r, err := json.Marshal(requestBodyMap)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "cannot marshal request body")
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 
 		requestBodyString = string(r)
@@ -103,11 +101,11 @@ func getApiHandler(c echo.Context) error {
 
 	hashIdString := createHashString(uniqueString)
 
-	response, err := redisClient().Get(ctx, hashIdString).Result()
+	response, err := redisClient().Get(context.Background(), hashIdString).Result()
 	if err == redis.Nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "data needs to be set before GET")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	} else if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "cannot connect to database")
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	encodedResponse := []byte(response)
@@ -116,53 +114,58 @@ func getApiHandler(c echo.Context) error {
 }
 
 func postApiHandler(c echo.Context) error {
+	if authKey() {
+		authorization := c.Request().Header.Get("Authorization")
+		if unauthorized(authorization) {
+			return echo.NewHTTPError(http.StatusUnauthorized)
+		}
+	}
+
 	body, err := io.ReadAll(c.Request().Body)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "cannot read request body")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	if len(body) == 0 {
-		return echo.NewHTTPError(http.StatusBadRequest, "there is no request body")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	var requestBodyInterface interface{}
 	err = json.Unmarshal([]byte(body), &requestBodyInterface)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "cannot unmarshal request body")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	requestBodyMap := requestBodyInterface.(map[string]interface{})
 
 	if requestBodyMap["response"] == nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "missing request response")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	requestBodyString := ""
 	if requestBodyMap["body"] != nil {
 		r, err := json.Marshal(requestBodyMap["body"])
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "cannot marshal request body")
+			return echo.NewHTTPError(http.StatusBadRequest)
 		}
 		requestBodyString = string(r)
 	}
 
 	requestResponseString, err := json.Marshal(requestBodyMap["response"])
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "cannot marshal request response")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	uniqueString := concatenateUniqueString(c.Request().URL.String(), requestBodyString)
 
 	hashIdString := createHashString(uniqueString)
 
-	err = redisClient().Set(ctx, hashIdString, requestResponseString, 7*24*time.Hour).Err()
+	err = redisClient().Set(context.Background(), hashIdString, requestResponseString, 7*24*time.Hour).Err()
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "cannot connect to database")
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	hashId := HashId{hashIdString}
-
-	return c.JSON(http.StatusOK, hashId)
+	return echo.NewHTTPError(http.StatusOK)
 }
 
 func concatenateUniqueString(urlString string, bodyString string) string {

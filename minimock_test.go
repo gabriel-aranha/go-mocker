@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -67,64 +68,59 @@ func TestAuthKey(t *testing.T) {
 	})
 }
 
+func TestUnauthorized(t *testing.T) {
+	t.Run("CorrectAuth", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		authorization := "Bearer test-auth-key"
+		got := unauthorized(authorization)
+		want := false
+
+		if got != want {
+			t.Errorf("got %t, want %t", got, want)
+		}
+	})
+
+	t.Run("CorrectAuthBadFormat", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		authorization := "Bearertest-auth-key"
+		got := unauthorized(authorization)
+		want := false
+
+		if got != want {
+			t.Errorf("got %t, want %t", got, want)
+		}
+	})
+
+	t.Run("IncorrectAuth", func(t *testing.T) {
+		os.Setenv("AUTH_KEY", "test-auth-key")
+
+		defer os.Unsetenv("AUTH_KEY")
+
+		authorization := "Bearer bad-auth-key"
+		got := unauthorized(authorization)
+		want := true
+
+		if got != want {
+			t.Errorf("got %t, want %t", got, want)
+		}
+	})
+}
+
 func TestHealthHandler(t *testing.T) {
-	t.Run("WithAuthKey", func(t *testing.T) {
-		os.Setenv("AUTH_KEY", "test-auth-key")
+	e := initEcho()
 
-		defer os.Unsetenv("AUTH_KEY")
+	req := httptest.NewRequest(echo.GET, "/", nil)
+	rec := httptest.NewRecorder()
 
-		e := initEcho()
+	e.ServeHTTP(rec, req)
 
-		req := httptest.NewRequest(echo.GET, "/", nil)
-		req.Header.Set("Authorization", "Bearer test-auth-key")
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-	})
-
-	t.Run("WrongAuthKey", func(t *testing.T) {
-		os.Setenv("AUTH_KEY", "test-auth-key")
-
-		defer os.Unsetenv("AUTH_KEY")
-
-		e := initEcho()
-
-		req := httptest.NewRequest(echo.GET, "/", nil)
-		req.Header.Set("Authorization", "Bearer bad-auth-key")
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusUnauthorized, rec.Code)
-	})
-
-	t.Run("MissingAuthKey", func(t *testing.T) {
-		os.Setenv("AUTH_KEY", "test-auth-key")
-
-		defer os.Unsetenv("AUTH_KEY")
-
-		e := initEcho()
-
-		req := httptest.NewRequest(echo.GET, "/", nil)
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-	})
-
-	t.Run("WithoutAuthKey", func(t *testing.T) {
-		e := initEcho()
-
-		req := httptest.NewRequest(echo.GET, "/", nil)
-		rec := httptest.NewRecorder()
-
-		e.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusOK, rec.Code)
-	})
+	assert.Equal(t, http.StatusOK, rec.Code)
 }
 
 func TestGetHandler(t *testing.T) {
@@ -132,7 +128,6 @@ func TestGetHandler(t *testing.T) {
 		name        string
 		route       string
 		body        string
-		message     string
 		redisKey    string
 		redisValue  string
 		dbConnected bool
@@ -142,7 +137,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "EmptyRequestBody",
 			route:       "/api/test-route",
 			body:        ``,
-			message:     `{"test": 20}`,
 			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
 			redisValue:  `{"test": 20}`,
 			dbConnected: true,
@@ -152,7 +146,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "NoJSONBody",
 			route:       "/api/test-route",
 			body:        `@`,
-			message:     `{"message":"cannot unmarshal request body"}`,
 			redisKey:    "1f1eee663738854c4e53bf7be7902de982f22255",
 			redisValue:  `{"test": 20}`,
 			dbConnected: true,
@@ -162,7 +155,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "WithRequestBody",
 			route:       "/api/test-route",
 			body:        `{"test": 10}`,
-			message:     `{"test": 20}`,
 			redisKey:    "1f1eee663738854c4e53bf7be7902de982f22255",
 			redisValue:  `{"test": 20}`,
 			dbConnected: true,
@@ -172,7 +164,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "DataUnsetInRedis",
 			route:       "/api/test-route",
 			body:        `{"body": {"test": 10}}`,
-			message:     `{"message":"data needs to be set before GET"}`,
 			redisKey:    "b99c071333d4dbca0d9298e5c8d7480f176cafdc",
 			redisValue:  `{"test": 20}`,
 			dbConnected: true,
@@ -182,7 +173,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "BadRoute",
 			route:       "/bad-api/test-route",
 			body:        ``,
-			message:     `{"message":"Not Found"}`,
 			dbConnected: true,
 			statusCode:  http.StatusNotFound,
 		},
@@ -190,7 +180,6 @@ func TestGetHandler(t *testing.T) {
 			name:        "MissingConnection",
 			route:       "/api/test-route",
 			body:        ``,
-			message:     `{"message":"cannot connect to database"}`,
 			redisKey:    "9074f62003bcbed6e87000ad55c501754308685b",
 			redisValue:  `{"test": 20}`,
 			dbConnected: false,
@@ -213,20 +202,14 @@ func TestGetHandler(t *testing.T) {
 				defer os.Unsetenv("REDIS_URL")
 			}
 
-			redisClient().Set(ctx, test.redisKey, test.redisValue, 7*24*time.Hour)
+			redisClient().Set(context.Background(), test.redisKey, test.redisValue, 7*24*time.Hour)
 			req := httptest.NewRequest(echo.GET, test.route, strings.NewReader(test.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
 
-			if test.statusCode != http.StatusOK {
-				assert.Equal(t, test.statusCode, rec.Code)
-				assert.Equal(t, test.message+"\n", rec.Body.String())
-			} else {
-				assert.Equal(t, test.statusCode, rec.Code)
-				assert.Equal(t, test.message, rec.Body.String())
-			}
+			assert.Equal(t, test.statusCode, rec.Code)
 		})
 	}
 }
@@ -236,73 +219,100 @@ func TestPostHandler(t *testing.T) {
 		name        string
 		route       string
 		body        string
-		message     string
 		dbConnected bool
+		hasAuth     bool
+		authKey     string
 		statusCode  int
 	}{
 		{
 			name:        "EmptyRequestBody",
 			route:       "/api/test-route",
 			body:        ``,
-			message:     `{"message":"there is no request body"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusBadRequest,
 		},
 		{
 			name:        "NoJSONBody",
 			route:       "/api/test-route",
 			body:        `@`,
-			message:     `{"message":"cannot unmarshal request body"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusBadRequest,
 		},
 		{
 			name:        "NoBodyKey",
 			route:       "/api/test-route",
 			body:        `{"response": {"test": 20}}`,
-			message:     `{"id":"9074f62003bcbed6e87000ad55c501754308685b"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusOK,
 		},
 		{
 			name:        "MissingBodyKey",
 			route:       "/api/test-route",
 			body:        `{"bod": {"test": 10}, "response": {"test": 20}}`,
-			message:     `{"id":"9074f62003bcbed6e87000ad55c501754308685b"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusOK,
 		},
 		{
 			name:        "BodyAndResponseKeys",
 			route:       "/api/test-route",
 			body:        `{"body": {"test": 10}, "response": {"test": 20}}`,
-			message:     `{"id":"1f1eee663738854c4e53bf7be7902de982f22255"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusOK,
 		},
 		{
 			name:        "MissingResponseKey",
 			route:       "/api/test-route",
 			body:        `{"body": {"test": 10}}`,
-			message:     `{"message":"missing request response"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusBadRequest,
 		},
 		{
 			name:        "BadRoute",
 			route:       "/bad-api/test-route",
 			body:        ``,
-			message:     `{"message":"Not Found"}`,
 			dbConnected: true,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusNotFound,
 		},
 		{
 			name:        "MissingConnection",
 			route:       "/api/test-route",
 			body:        `{"body": {"test": 10}, "response": {"test": 20}}`,
-			message:     `{"message":"cannot connect to database"}`,
 			dbConnected: false,
+			hasAuth:     false,
+			authKey:     "",
 			statusCode:  http.StatusInternalServerError,
+		},
+		{
+			name:        "AuthorizedConnection",
+			route:       "/api/test-route",
+			body:        `{"body": {"test": 10}, "response": {"test": 20}}`,
+			dbConnected: true,
+			hasAuth:     true,
+			authKey:     "test-auth-key",
+			statusCode:  http.StatusOK,
+		},
+		{
+			name:        "UnauthorizedConnection",
+			route:       "/api/test-route",
+			body:        `{"body": {"test": 10}, "response": {"test": 20}}`,
+			dbConnected: true,
+			hasAuth:     true,
+			authKey:     "bad-auth-key",
+			statusCode:  http.StatusUnauthorized,
 		},
 	}
 
@@ -322,13 +332,18 @@ func TestPostHandler(t *testing.T) {
 			}
 
 			req := httptest.NewRequest(echo.POST, test.route, strings.NewReader(test.body))
+			if test.hasAuth {
+				os.Setenv("AUTH_KEY", test.authKey)
+				defer os.Unsetenv("AUTH_KEY")
+				req.Header.Set("Authorization", "Bearer test-auth-key")
+			}
+
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 
 			e.ServeHTTP(rec, req)
 
 			assert.Equal(t, test.statusCode, rec.Code)
-			assert.Equal(t, test.message+"\n", rec.Body.String())
 		})
 	}
 }
