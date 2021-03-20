@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/labstack/echo/v4"
@@ -187,7 +186,7 @@ func getRedisKey(keyId string) (string, *echo.HTTPError) {
 
 func setRedisKey(keyId string, value []byte) *echo.HTTPError {
 	echoError := echo.NewHTTPError(http.StatusOK)
-	err := redisClient().Set(context.Background(), keyId, value, 7*24*time.Hour).Err()
+	err := redisClient().Set(context.Background(), keyId, value, 0).Err()
 	if err != nil {
 		echoError = echo.NewHTTPError(http.StatusInternalServerError)
 	}
